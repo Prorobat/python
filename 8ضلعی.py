@@ -1,0 +1,31 @@
+import turtle as w
+for a in range(75):
+    w.pensize(5)
+    w.speed(0)
+    w.pencolor('black')
+    w.fd(100)
+    w.lt(45)
+    w.pencolor('red')
+    w.fd(100)
+    w.lt(500)
+    w.pencolor('black')
+    w.fd(100)
+    w.lt(45)
+    w.pencolor('blue')
+    w.fd(100)
+    w.lt(500)
+    w.pencolor('black')
+    w.fd(100)
+    w.lt(45)
+    w.pencolor('purple')
+    w.fd(100)
+    w.lt(500)
+    w.pencolor('black')
+    w.fd(100)
+    w.lt(45)
+    w.pencolor('orange')
+    w.fd(100)
+    w.lt(500)
+    
+    
+    
