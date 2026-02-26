@@ -1,0 +1,199 @@
+import pygame
+import random
+
+pygame.init()
+
+# ----------------------
+# تنظیمات پیکسلی
+# ----------------------
+WIDTH, HEIGHT = 320, 240
+SCALE = 3
+
+screen = pygame.display.set_mode((WIDTH*SCALE, HEIGHT*SCALE))
+pygame.display.set_caption("PIXEL LEGEND INDUSTRY")
+
+game_surface = pygame.Surface((WIDTH, HEIGHT))
+clock = pygame.time.Clock()
+font = pygame.font.SysFont("Courier", 12)
+
+# ----------------------
+# رنگ‌ها
+# ----------------------
+SKY = (25,25,50)
+GROUND = (70,40,20)
+PLAYER_COLOR = (50,150,255)
+ENEMY_COLOR = (50,200,50)
+BOSS_COLOR = (200,60,60)
+YELLOW = (220,200,50)
+RED = (200,40,40)
+WHITE = (255,255,255)
+
+# ----------------------
+# بازیکن
+# ----------------------
+player = pygame.Rect(40,150,16,16)
+player_hp = 150
+player_max_hp = 150
+player_damage = 35
+player_speed = 2
+player_level = 1
+coins = 0
+
+# ----------------------
+# دشمن
+# ----------------------
+enemy = pygame.Rect(240,150,16,16)
+enemy_hp = 60
+enemy_max_hp = 60
+
+# باس
+boss = pygame.Rect(200,120,32,32)
+boss_hp = 300
+boss_active = False
+
+# افکت‌ها
+particles = []
+shake = 0
+
+# موج‌ها
+wave = 1
+
+# ----------------------
+def spawn_enemy():
+    global enemy_hp, enemy_max_hp
+    enemy.x = random.randint(150,280)
+    enemy_hp = 60 + wave*10
+    enemy_max_hp = enemy_hp
+
+spawn_enemy()
+
+# ----------------------
+running = True
+game_over = False
+victory = False
+
+while running:
+    clock.tick(60)
+    game_surface.fill(SKY)
+    pygame.draw.rect(game_surface, GROUND, (0,166,WIDTH,74))
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    keys = pygame.key.get_pressed()
+
+    if not game_over and not victory:
+
+        # حرکت
+        if keys[pygame.K_a]: player.x -= player_speed
+        if keys[pygame.K_d]: player.x += player_speed
+
+        # حمله
+        if keys[pygame.K_SPACE]:
+            if player.colliderect(enemy) and enemy_hp > 0:
+                enemy_hp -= player_damage
+                shake = 6
+                for i in range(8):
+                    particles.append([enemy.x+8,enemy.y+8,
+                                      random.randint(-2,2),
+                                      random.randint(-2,2),15])
+
+            if boss_active and player.colliderect(boss):
+                boss_hp -= player_damage
+                shake = 8
+
+        # برخورد دشمن
+        if player.colliderect(enemy) and enemy_hp > 0:
+            player_hp -= 0.2
+
+        if boss_active and player.colliderect(boss):
+            player_hp -= 0.5
+
+        # مرگ دشمن
+        if enemy_hp <= 0:
+            coins += 5
+            wave += 1
+            spawn_enemy()
+
+            # هر 5 موج باس
+            if wave % 5 == 0:
+                boss_active = True
+
+        # باس کشته شد
+        if boss_active and boss_hp <= 0:
+            coins += 50
+            boss_active = False
+            boss_hp = 300 + wave*20
+            wave += 1
+
+        # لول آپ
+        if coins >= player_level * 20:
+            player_level += 1
+            player_max_hp += 20
+            player_hp = player_max_hp
+            player_damage += 5
+
+        # گیم اور
+        if player_hp <= 0:
+            game_over = True
+
+        # ویکتوری
+        if player_level >= 10:
+            victory = True
+
+    # پارتیکل
+    for p in particles[:]:
+        p[0] += p[2]
+        p[1] += p[3]
+        p[4] -= 1
+        pygame.draw.rect(game_surface, RED, (p[0],p[1],2,2))
+        if p[4] <= 0:
+            particles.remove(p)
+
+    # رسم دشمن
+    if enemy_hp > 0:
+        pygame.draw.rect(game_surface, ENEMY_COLOR, enemy)
+
+    # رسم باس
+    if boss_active:
+        pygame.draw.rect(game_surface, BOSS_COLOR, boss)
+
+    # رسم بازیکن
+    pygame.draw.rect(game_surface, PLAYER_COLOR, player)
+
+    # UI
+    ui = [
+        f"HP: {int(player_hp)}/{player_max_hp}",
+        f"DMG: {player_damage}",
+        f"COINS: {coins}",
+        f"LVL: {player_level}",
+        f"WAVE: {wave}"
+    ]
+
+    y = 5
+    for text in ui:
+        t = font.render(text, True, WHITE)
+        game_surface.blit(t,(5,y))
+        y += 12
+
+    if game_over:
+        t = font.render("GAME OVER", True, RED)
+        game_surface.blit(t,(120,110))
+
+    if victory:
+        t = font.render("YOU ARE GOD", True, YELLOW)
+        game_surface.blit(t,(100,110))
+
+    # اسکرین شیک
+    offset_x = offset_y = 0
+    if shake > 0:
+        offset_x = random.randint(-2,2)
+        offset_y = random.randint(-2,2)
+        shake -= 1
+
+    scaled = pygame.transform.scale(game_surface,(WIDTH*SCALE,HEIGHT*SCALE))
+    screen.blit(scaled,(offset_x,offset_y))
+    pygame.display.flip()
+
+pygame.quit()
